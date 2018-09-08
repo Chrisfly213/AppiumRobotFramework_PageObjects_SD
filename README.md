@@ -23,7 +23,8 @@
 ## Running test
 * By default it is set up to run on an Android device using Chrome browser. If your mobile or emulator does not match these default settings, you can change it in the `shared_resources/custom_functions/\_global_test_setup.txt` file under `Create Mobile Emulation` keyword.
 * Open command line in repository main folder directory and enter: `pybot .`
+* Test should start running. Appium server should be displaying activity as it communicates between test and device/emulator.
+* Chrome on device or emulator should open and appium should be seen interacting with the website during the test.
 
-
-## Log Report Examples
+## Log Report Example
 ![Log Report Example 1](RobotFramework_Appium.png)
