@@ -1,0 +1,30 @@
+*** Settings ***
+Documentation     this file contains objects on the quiz REGISTRATION page
+Resource          ../_test_setup.txt
+
+*** Variables ***
+${reg_name}    jquery=.registration input:eq(0)
+${reg_email}     jquery=#form_input_email
+${reg_pwd}    jquery=#form_input_password
+${reg_submit}       jquery=#reg_popup_trigger_sd
+
+${reg_popup}    jquery=#reg_popup_sd_copy
+
+${reg_input_name}    autotest
+
+#=================================================================
+#=================================================================
+
+*** Keywords ***
+Input name in registration Name field
+    Global Reg - type name in Name field
+
+Input email in registration Email field
+    Global Reg - type new email into email field
+
+Confirm Registration Password field on page
+    Verify Element On Page    ${reg_pwd}
+
+Confirm Submit button on page
+    Verify Element On Page    ${reg_submit}
+

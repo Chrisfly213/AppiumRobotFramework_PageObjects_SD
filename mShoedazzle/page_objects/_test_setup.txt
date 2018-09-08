@@ -1,0 +1,21 @@
+*** Settings ***
+Documentation     This resource file contains objects to setup test
+Resource    ${CURDIR}${/}..${/}..${/}shared_resources/custom_functions/_global_test_setup.txt
+
+*** Variables ***
+
+#############
+${TEST_URL}       http://m.shoedazzle.com
+#############
+#############
+# Global Variables #
+#############
+${global_page_content}    jquery=body  #.page-content, #content
+
+*** Keywords ***
+Open browser window
+    shoedazzle mobile test
+
+Logout and close browser
+    Logout
+    Close Browser

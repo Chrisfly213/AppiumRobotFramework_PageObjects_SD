@@ -1,0 +1,19 @@
+*** Setting ***
+Documentation     Registration Features
+
+Suite Setup       Open browser window
+Suite Teardown    Close browser window
+Test Setup        Custom reload homepage
+#Test Teardown     Reset Application
+
+Resource          ../step_definitions/homepage_steps.txt
+Resource          ../step_definitions/registration_steps.txt
+
+
+*** Test Case ***
+Scenario: Valid User Registration
+    [Tags]    quiz
+    Given User is on the public home page
+    And Navigates to Get Started
+    Then Completing Registration up to submit button
+

@@ -1,0 +1,34 @@
+﻿*** Settings ***
+Documentation     this file contains objects on the public home page
+
+
+*** Variables ***
+${home_getstarted_link_top_image}    jquery=[href*='quiz/step']>img:last
+
+
+
+# ====================================================
+# ====================================================
+
+*** Keywords ***
+Go to public home page
+    Custom reload homepage
+    Verify public home page appears
+
+Verify public home page appears
+    Page Should Contain Element     ${home_getstarted_link_top_image}
+
+Click Get Started top image on page    [Arguments]    ${count}=3
+    ${lower_count}=    Evaluate    ${count}-1
+    # ===========================
+    Find, Scroll To and Click Element    ${home_getstarted_link_top_image}
+    ${element_gone}=
+    ...    Run Keyword And Return Status
+    ...    Wait Until Page Does Not Contain Element    ${home_getstarted_link_top_image}
+    # ===========================
+    Run Keyword If    ${element_gone} == False and ${lower_count} > 0
+    ...    Click Get Started top image on page    ${lower_count}
+    ...    ELSE IF    ${element_gone} == False and ${lower_count} <= 0
+    ...    Fail    The automation script appears to be having an issue with clicking on the homepage top image.
+    # ===========================
+

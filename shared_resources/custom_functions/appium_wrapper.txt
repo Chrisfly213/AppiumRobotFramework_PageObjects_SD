@@ -1,0 +1,15 @@
+*** Settings ***
+Documentation    This file takes keywords originally created for SeleniumLibrary tests and wraps them for use with AppiumLibrary.
+
+
+*** Keywords ***
+
+#Go To    [Arguments]    ${URL}
+#    Go To URL    ${URL}
+
+
+Select From List
+    [Arguments]    ${state_menu}    ${global_state_ca_on}
+    Select dropdown menu answer    ${state_menu}    ${global_state_ca_on}
+
+

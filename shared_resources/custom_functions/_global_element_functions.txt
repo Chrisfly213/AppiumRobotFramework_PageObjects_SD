@@ -1,0 +1,569 @@
+*** Settings ***
+Documentation    This resource file contains global element clicks and selections shared across all scripts.
+
+Resource    _global_test_setup.txt
+
+*** Variables ***
+
+*** Keywords ***
+
+Find, Scroll To and Click Element
+    [Arguments]
+    ...    ${element}
+    ...    ${timeout}=${wait_time}
+    ...    ${validate_pagecontainselement}=None
+    ...    ${validate_elementvisible}=None
+    ...    ${element_goneafterclick}=False
+    ...    ${click_delay}=0.5
+    ...    ${scrollNumber}=250
+    [Documentation]
+    ...    >Element waits to be visible and then executes javascript to scroll slightly above
+    ...    the element. This is particularly useful when a top nav overlaps with an element.
+    ...    >>The function then waits half a second before clicking on the element.
+    ...    >Timeout is the amount of time the function waits for the element to be visible.
+    ...    >If validate_pagecontainselement is entered, the function will perform a validation check
+    ...    to ensure the expected element is present in the DOM of the page, but not necessarily visible.
+    ...    >If validate_elementvisible is entered, the function will perform a validation check to 
+    ...    ensure the expected element is present in the DOM of the page and is also visible.
+    # =========================
+    #Javascript Scroll Up On Page    ${element}    ${timeout}    scrollUpNumber=${scrollNumber}
+    #Sleep    ${click_delay}
+    Find and Click Element
+    ...    ${element}
+    ...    ${timeout}
+    ...    ${validate_pagecontainselement}
+    ...    ${validate_elementvisible}
+    ...    ${element_goneafterclick}
+    # =========================
+    #Run Keyword If    '''${validate_pagecontainselement}''' != '''None'''
+    #...    Wait Until Page Contains Element    ${validate_pagecontainselement}
+    #Run Keyword If    '''${validate_elementvisible}''' != '''None'''
+    #...    Verify Element On Page    ${validate_elementvisible}
+    # =========================
+
+Find and Click Element
+    #[Timeout]    1s
+    [Arguments]
+    ...    ${element}
+    ...    ${timeout}=${wait_time}
+    ...    ${validate_pagecontainselement}=None
+    ...    ${validate_elementvisible}=None
+    ...    ${element_goneafterclick}=False
+    [Documentation]
+    ...    >Element waits to be visible and then clicks on element.
+    ...    >Timeout is the amount of time the function waits for the element to be visible.
+    ...    >If validate_pagecontainselement is entered, the function will perform a validation check
+    ...    to ensure the expected element is present in the DOM of the page, but not necessarily visible.
+    ...    >If validate_elementvisible is entered, the function will perform a validation check to 
+    ...    ensure the expected element is present in the DOM of the page and is also visible.
+    # =========================
+    Wait Until Element Is Visible    ${element}    ${timeout}
+    Wait Until Keyword Succeeds    2x    1s    Click Element    ${element}
+    # =========================
+    Run Keyword If    "${validate_pagecontainselement}" != "None"
+    ...    Wait Until Page Contains Element    ${validate_pagecontainselement}
+    Run Keyword If    "${validate_elementvisible}" != "None"
+    ...    Verify Element On Page    ${validate_elementvisible}
+    # =========================
+    ${half_timeout}=    Evaluate    ${timeout}/2
+    Log    ${half_timeout}
+    Run Keyword If    ${element_goneafterclick}
+    ...    Wait Until Keyword Succeeds
+    ...    2x    1s    Element gone or not visible    ${element}    timeout=${half_timeout}
+    # =========================
+# ==================================================
+# ==================================================
+# ==================================================
+Find and Click first visible Element
+    [Arguments]
+    ...    ${element}
+    ...    ${timeout}=0.5
+    ...    ${element_goneafterclick}=False
+    [Documentation]    Can take an element that has multiple locators bundled in it, and counts the number of elements matching the locator, clicking on the first visible one. The idea behind this keyword is to find any available visible button, even if it's not the first one that's visible, which would fail "Find and Click Element" or other click element keywords that will only try clicking on the first matching element in the DOM. If none are clickable, the keyword fails and displays a fail message.
+    # ====================
+    #Wait Until Page Contains Element    ${element}    ${timeout}
+    ${new_element_list}=    Create List
+    ${new_element_list}=    split_string_using_regex    ${element}
+    # ====================
+    :FOR    ${element}    IN    @{new_element_list}
+    \    ${get_item_count}=    Get Variable Count    ${element}
+    \    ${checkfor_element}=    Run Keyword If    ${get_item_count} > 0
+    \    ...    Run Keyword And Return Status
+    \    ...    Find and Click first visible Element__part_2    ${element}
+    \    ...    ${get_item_count}    ${timeout}    ${element_goneafterclick}
+    \    Exit For Loop If    ${checkfor_element} == True
+    # ====================
+    Run Keyword If    ${checkfor_element} != True
+    ...    Fail With Failure Details    False: page did not contain any of the entered elements or was unable to click on them: ${new_element_list}
+Find and Click first visible Element__part_2
+    [Arguments]
+    ...    ${element}
+    ...    ${item_count}=0
+    ...    ${timeout}=${wait_time}
+    ...    ${element_goneafterclick}=False
+    # ====================
+    Register Keyword To Run On Failure    Nothing
+    ${timer_countdown}=    Set Variable    0
+    # ====================
+    :FOR    ${num}    IN RANGE    0    ${item_count}
+    \    Run Keyword If    ${timer_countdown} < 1    Set Test Variable    ${timeout}    0
+    \    ${timer_countdown}=    Evaluate    ${timer_countdown} + 1
+    \    ${element_click}=    Run Keyword And Return Status
+    \    ...    Click Element    jquery=${element}:eq(${num})
+    #\    ...    Find and Click Element    jquery=${element}:eq(${num})    timeout=${timeout}    element_goneafterclick=${element_goneafterclick}
+    \    Run Keyword If    ${element_click} != True    Log
+    \    ...    ${element_click}: page does not contain ${element}
+    \    ${num}=    Set Variable If    ${element_click} == True    ${num}
+    \    Exit For Loop If    ${element_click} == True
+    # ====================
+    Set fail message details
+    ${item_count}=    Evaluate    ${item_count}-1
+    Run Keyword If    ${element_click} == True     Log     ${element_click}: ${element}:eq(${num}) is visible on the page, out of the element list entered for review: ${element}:eq(0 to ${item_count})
+    Run Keyword If    ${element_click} != True     Run Keyword And Continue On Failure
+    ...    Fail With Failure Details    ${element_click}: page did not contain any of the entered element(s) or was unable to click on them: ${element}:eq(0 to ${item_count})
+# ==================================================
+# ==================================================
+# ==================================================
+Find and Click all element of same locator    [Arguments]    ${element}    ${timeout}=0    ${element_goneafterclick}=False    
+    [Documentation]    If there is more than 1 element that has the same locator, this will attempt to click on all of them.
+    
+    ${wait_timeout}=    Run Keyword If    ${timeout} < 3    Set Variable    2
+    ...    ELSE    Set Variable    ${timeout}
+    
+    ${page_contains_element}=    Run Keyword And Return Status    Wait Until Page Contains Element    ${element}    ${wait_timeout}
+    Run Keyword If    ${page_contains_element}
+    ...    Global - count and click all elements of same locator    ${element}    ${timeout}    element_goneafterclick=${element_goneafterclick}
+
+Global - count and click all elements of same locator    [Arguments]    ${element}    ${timeout}=${wait_time}    ${element_goneafterclick}=False
+    ${element_list}=    split_string_using_regex    ${element}
+    Register Keyword To Run On Failure    Nothing
+    :FOR    ${new_element}    IN    @{element_list}
+    \    ${get_var_count}=    Get variable count    ${new_element}
+    \    Run Keyword If    ${get_var_count} > 0
+    \    ...    Run Keyword And Ignore Error
+    \    ...    Global - Click all element of same element    jquery=${new_element}    ${get_var_count}    ${timeout}    element_goneafterclick=${element_goneafterclick}
+    
+    Set fail message details
+Global - Click all element of same element    [Arguments]    ${element}    ${num_count}    ${timeout}=${wait_time}    ${element_goneafterclick}=False
+    :FOR    ${num}    IN RANGE    0    ${num_count}
+    \    ${click_element}=    Run Keyword And Return Status    Find, Scroll To and Click Element    ${element}:eq(${num})    ${timeout}    element_goneafterclick=${element_goneafterclick}
+ #   \    Run Keyword If    ${click_element} == True and <variable to check for first click to stop function>  Exit for loop
+
+# ==================================================
+# ==================================================
+# ==================================================
+Find and Click Element using javascript
+    [Arguments]    ${element}
+    [Documentation]    In rare cases, Selenium has difficulties clicking on elements. This is a custom jquery alternative, but should only be used if "Find and Click Element" cannot be used.
+    
+    Wait Until Element Is Visible    ${element}
+    ${element_ready}=    Remove element variable tag    ${element}
+    
+    Run Keyword If    '''"''' in '''${element_ready}'''
+    ...    Execute Javascript    $('${element_ready}').click();
+    ...    ELSE    Execute Javascript    $("${element_ready}").click();
+
+Click Element using javascript
+    [Arguments]    ${element}
+    [Documentation]    In rare cases, Selenium has difficulties clicking on elements. This is a custom jquery alternative, but should only be used if "Find and Click Element" cannot be used. Also, this particular click function does not verify that the element the user is attempting to click on is visible, so I would recommend using Find and Click Element using javascript before trying to use this keyword, if possible.
+    
+    ${element_ready}=    Remove element variable tag    ${element}
+    
+    Run Keyword If    '''"''' in '''${element_ready}'''
+    ...    Execute Javascript    $('${element_ready}').click();
+    ...    ELSE    Execute Javascript    $("${element_ready}").click();
+
+
+Hover Mouse    [Arguments]    ${element}    ${count}=2    ${js_scroll}=False
+    [Documentation]    js_scroll optional function added because FF gecko driver has issues with hovering over elements not physically visible in the browser window. This should scroll to the element first to bring it into view before attempting to mouse over it. 6/24/2017 addition - CMcCue
+    # ==========
+    ${lower_count}=    Evaluate    ${count}-1
+    # ==========
+    Wait Until Keyword Succeeds    2x    2s
+    ...    Wait Until Element Is Visible  ${element}    ${wait_time}
+    # ==========
+    Run Keyword If    ${js_scroll}
+    ...    Javascript Scroll to Element    ${element}
+    ${mouse_over}=    Run Keyword And Return Status
+    ...    Mouse Over    ${element}
+    # ==========
+    Run Keyword If    not(${mouse_over}) and ${lower_count} > 0
+    ...    Hover Mouse    ${element}    count=${lower_count}    js_scroll=True
+    
+Mouse Click    [Arguments]    ${element}
+    Mouse Down                ${element}
+    Mouse Up                  ${element}
+
+
+Global close pop up
+    [Arguments]
+    ...    ${close_btn}=${global_popup_close_btn}
+    ...    ${timeout}=2    ${count}=1
+    ...    ${element_goneafterclick}=True
+    # ====================
+    [Documentation]    Able to close any kind of typical pop up.
+    ...    close_btn: the element locator to find and click in order to close the pop up.
+    ...    timeout: amount of time (in seconds) the test will wait for a pop up to appear. Defaults to 2 seconds.
+    ...    count: number of times to run the test if find and click element part fails. Defaults to not rerunning, but setting this to anything more than 1 will rerun the keyword. Must be careful with this, as there may be pages where there are a lot of pop ups in the HTML of the page, but not visible and therefore unclickable.
+    ...    element_goneafterclick: Checks if an element is gone after clicking. Defaults to True; can be set to False if the test would like to ignore this functionality. There may be cases where clicking on a pop up is not expected to remove the pop up or make it not visible, so this functionality helps with a possible scenario like that.
+    # ====================
+    ${lower_count}=    Evaluate    ${count}-1
+    # ====================    
+    ${check_for_popup}=
+    ...    Run Keyword And Return Status
+    ...    Wait Until Page Contains Element    ${close_btn}    ${timeout}
+    # ====================
+    ${close_popup}=
+    ...    Run Keyword If    ${check_for_popup} == True
+    ...    Run Keyword And Return Status
+    ...    Find and Click First Visible Element
+    ...    ${close_btn}    timeout=${timeout}    element_goneafterclick=${element_goneafterclick}
+    # ====================
+    Run Keyword If
+    ...    '''${close_popup}'''=='''False''' and '''${lower_count}'''>'''0'''
+    ...    Global Close pop up    ${close_btn}    1    count=${lower_count}
+    # ====================
+
+# ************************************
+# ************************************
+Select random clickable answer
+    [Arguments]
+    ...    ${element}
+    ...    ${count}=1
+    ...    ${delay}=0.5
+    ...    ${element_not_visible_after_click}=False
+    ...    ${element_not_in_html_after_click}=False
+	# ====================
+    #Wait Until Element Is Visible    ${element}
+    ${element_count}=    Get variable count    ${element}
+    Run Keyword If    ${element_count} == 0
+    ...    Fail with Failure Details    The element ${element} you are looking for was not found on the page. The element location may have been changed by the development team or it may have been removed. Check page for more details.
+    ...    ELSE    Create list to generate random variable    ${element_count}
+    Run Keyword If    ${element_count} > 0
+    ...    Select clickable answer
+    ...    ${element}    ${count}    ${delay}
+    ...    ${element_not_visible_after_click}    ${element_not_in_html_after_click}
+
+
+Select clickable answer
+    [Arguments]
+    ...    ${element}
+    ...    ${count}=1
+    ...    ${delay}=0.5
+    ...    ${element_not_visible_after_click}=False
+    ...    ${element_not_in_html_after_click}=False
+    [Documentation]
+    ...    'element' is the element to be clicked on. The element should be a locator
+    ...    that can locate all possible clickable elements and then select a random 
+    ...    one. 
+    ...    'count' is the number of elements to click. In some cases, a slide or 
+    ...    content can select multiple elements. For example, putting the 'count' as 
+    ...    3 will select 3 elements. If no 'count' is input, it defaults to 1 element 
+    ...    to click. 
+    ...    The 'delay' is a number value that provides a slight delay after randomizing 
+    ...    the element(s) and then clicking on them. Sometimes (particularly in quiz 
+    ...    areas), a slight delay is needed to allow the element to react to being 
+    ...    clicked on. Delay is defaulted to 0.5 seconds if no input is given.
+    ...    'element_should_be_gone' is if the element is expected to disappear after
+    ...    being interacted with. This defaults to False, as some scenarios don't 
+    ...    have the element disappearing afterwards.
+    # ===================
+    ${lower_count}=    Evaluate    ${count} - 1
+    # ===================
+    ${random}=    Evaluate    random.choice(${num_list})    random
+	# ===================
+    Sleep    ${delay}
+    Find, Scroll To and Click Element    ${element}:eq(${random})
+    # ===================
+    ${check_list_length}=    Get Length    ${num_list}
+    Run Keyword If
+    ...    '''${lower_count}''' > '''0''' and '''${check_list_length}''' > '''1'''
+    ...    Remove Values From List    ${num_list}    ${random}	
+	Run Keyword If
+    ...    '''${lower_count}''' > '''0''' and '''${check_list_length}''' > '''1'''
+	...    Select random clickable answer    ${element}    ${lower_count}
+    Run Keyword If
+    ...    '''${lower_count}''' > '''0''' and '''${check_list_length}''' <= '''1'''
+    ...    Log To Console    Not enough items in the element count list to click on the designated number requested.
+    Run Keyword If
+    ...    '${element_not_visible_after_click}' == 'True'
+    ...    Wait Until Element Is Not Visible    ${element}    
+    Run Keyword If
+    ...    '${element_not_in_html_after_click}' == 'True'
+    ...    Wait Until Page Does Not Contain Element    ${element}
+# ************************************
+# ************************************
+Select dropdown menu answer
+    [Documentation]
+    ...    >"element" is the main menu element that holds the subelements in it.
+    ...    >"option_subelement" is used for counting the number of subelements. It
+    ...    defaults to "option" in the jquery string since that is most commonly used
+    ...    in the HTML.
+    ...    >"select_element_value" can be used if an specific option in the dropdown menu
+    ...    wants to be selected instead of a random one. Since normally we want a random
+    ...    one, this defaults to "None."
+    ...    >"range_start" is used for selecting where to start when randomizing the 
+    ...    subelement selector. Since the "0" subelement is usually a non-selectable 
+    ...    option, this defaults to "1."
+    ...    >"skip_menu_check" is an option that can skip the menu element visual ID check
+    ...    on the page. Normally we want this to make sure it's visible on the page 
+    ...    before we interact with it, however in some cases, the literal menu element 
+    ...    that houses the subelements is overlapped by an invisible element and can cause
+    ...    issues with the automation driver. If this issue arises, setting this to 
+    ...    "True" will skip that check. It defaults to "False."
+    [Arguments]
+    ...    ${element}
+    ...    ${option_subelement}=option
+    ...    ${select_element_value}=None
+    ...    ${select_element_index}=None
+    ...    ${range_start}=1
+    ...    ${skip_menu_check}=False
+    # ====================
+    Run Keyword If    ${skip_menu_check} == False
+    ...    Wait Until Element Is Visible    ${element}
+    ${element_count}=    Get variable count    ${element} ${option_subelement}
+    # ====================
+    ${random}=
+    ...    Run Keyword If    ${element_count} > ${range_start}
+    ...    Evaluate
+    ...    random.randint(${range_start}, (${element_count}-1))    random
+    ...    ELSE    Evaluate    ${element_count}-1
+    #random.choice(${num_list})    random
+    ${random_int}=
+    ...    Convert To String    ${random}
+    # ====================
+    Run Keyword If    ${element_count} == 0
+    ...    Log To Console    The element you are looking for was not found on the page. The element location may have been changed by the development team or it may have been removed. Check page for more details.
+    ...    ELSE IF
+    ...    '''${select_element_value}'''=='''None''' and '''${select_element_index}'''=='''None''' and '''${element_count}''' > '''0'''
+    ...    Run Keywords    Find and Click Element    ${element}    AND    Sleep    1    AND
+    ...    Find and Click Element    ${element} ${option_subelement}:eq(${random_int})
+    ...    ELSE IF
+    ...    '''${select_element_value}'''!='''None''' and '''${element_count}''' > '''0'''
+    ...    Run Keywords    Find and Click Element    ${element}    AND    Sleep    1    AND
+    ...    Find and Click Element    ${element} ${option_subelement}[value='${select_element_value}']
+    ...    ELSE IF
+    ...    '''${select_element_index}'''!='''None''' and '''${element_count}''' > '''0'''
+    ...    Run Keywords    Find and Click Element    ${element}    AND    Sleep    1    AND
+    ...    Find and Click Element    ${element} ${option_subelement}:eq(${select_element_index})
+
+
+
+
+Click menu, then click submenu link
+    [Arguments]    ${menu_element}    ${submenu_element}    ${submenu_element_confirm}=None    ${nav_to_scroll}=None
+    [Documentation]    menu_element: expected menu to click and open. submenu_element: item in open menu to select. submenu_element_confirm: optional argument in case a confirmation of selecting the subelement is required. nav_to_scroll: In case the menu in question is within a scrollable menu, you may need to scroll the menu to the elements to interact with them. This optional argument takes the nav element that controls the scrollable part of the nav, which will scroll to the item in question and then click on it.
+    Find and Click Element    ${menu_element}
+    
+    Run Keyword If    '''${nav_to_scroll}''' == '''None'''
+    ...    Find and Click Element    ${submenu_element}
+    ...    ELSE    Nav - Scroll To and Click Element    ${submenu_element}    ${nav_to_scroll}
+
+    Run Keyword If    '''${submenu_element_confirm}''' != '''None''' and '''${nav_to_scroll}''' == '''None'''
+    ...    Find and Click Element    ${submenu_element_confirm}
+    ...    ELSE IF    '''${submenu_element_confirm}''' != '''None''' and '''${nav_to_scroll}''' != '''None'''
+    ...    Nav - Scroll To and Click Element    ${submenu_element_confirm}    ${nav_to_scroll}
+
+
+# ************************************
+# ************************************
+# ************************************
+# ************************************
+# ************************************
+# ************************************
+
+Verify Element On Page
+    [Arguments]
+    ...    ${element}
+    ...    ${timeout}=${wait_time}
+    # =========================
+    ${half_timeout}=    Evaluate    ${timeout}/2
+    # =========================
+    Wait Until Keyword Succeeds    2x    2s
+    ...    Wait Until Page Contains Element   ${element}    ${half_timeout}
+    Wait Until Element Is Visible      ${element}    ${timeout}
+    Element Should Be Visible          ${element}
+Verify Element Not On Page
+    [Arguments]
+    ...    ${element}
+    ...    ${timeout}=${wait_time}
+    Wait Until Element Is Not Visible    ${element}    ${timeout}
+    Element Should Not Be Visible        ${element}  
+Verify Any Entered Element On Page
+    [Arguments]    @{elements}
+    [Documentation]    Takes a list of any number of elements, and verifies at least one of them is visible on the page. If none are visible, the keyword fails.
+    
+    :FOR    ${element}    IN    @{elements}
+    #\    Run Keyword If    ${count_up} <= 0    Set Test Variable    ${timeout}    5    ELSE    Set Test Variable    ${timeout}    0.5
+    \    Register Keyword To Run On Failure    Nothing
+    \    ${element_visible}=    Run Keyword And Return Status
+    \    ...    Verify Element On Page    ${element}    0.5    #${timeout}
+    \    Run Keyword If    ${element_visible} != True    Log
+    \    ...    ${element_visible}: page does not contain ${element}
+    \    ${element}=    Set Variable If    ${element_visible} == True    ${element}
+    \    Exit For Loop If    ${element_visible} == True
+    
+    Set fail message details
+    Run Keyword If    ${element_visible} == True     Log     ${element_visible}: ${element} is visible on the page, out of the element list entered for review: @{elements}
+    Run Keyword If    ${element_visible} != True     Run Keyword And Continue On Failure
+    ...    Fail With Failure Details    ${element_visible}: page did not contain any of the entered elements: @{elements}
+
+# ====================
+# ====================
+Find first visible Element
+    [Arguments]
+    ...    ${element}
+    ...    ${timeout}=0.5
+    [Documentation]    Can take an element that has multiple locators bundled in it, and counts the number of elements matching the locator, and checking for the first visible one. The idea behind this keyword is to find any available visible button, even if it's not the first one that's visible. If none are visible, the keyword fails and displays a fail message.
+    # ====================
+    ${checkfor_element}=    Run Keyword And Return Status
+    ...    Wait Until Page Contains Element    ${element}    ${timeout}
+    Run Keyword If    ${checkfor_element}
+    ...    Find first visible Element__part_2    ${element}    ${timeout}=0
+Find first visible Element__part_2    [Arguments]    ${element}    ${timeout}=0
+    ${new_element_list}=    Create List
+    ${new_element_list}=    split_string_using_regex    ${element}
+    # ====================
+    :FOR    ${element}    IN    @{new_element_list}
+    \    ${get_item_count}=    Get Variable Count    ${element}
+    \    ${checkfor_element}=    Run Keyword If    ${get_item_count} > 0
+    \    ...    Run Keyword And Return Status
+    \    ...    Find first visible Element__part_3    ${element}
+    \    ...    ${get_item_count}    ${timeout}
+    \    Exit For Loop If    ${checkfor_element} == True
+    # ====================
+    Run Keyword If    ${checkfor_element} != True
+    ...    Fail With Failure Details    False: page did not contain any of the entered elements: ${element}
+Find first visible Element__part_3
+    [Arguments]
+    ...    ${element}
+    ...    ${item_count}=0
+    ...    ${timeout}=${wait_time}
+    # ====================
+    Register Keyword To Run On Failure    Nothing
+    # ====================
+    :FOR    ${num}    IN RANGE    0    ${item_count}
+    \    ${new_element}=    jquery=${element}:eq(${num})
+    \    ${element_check}=    Run Keyword And Return Status
+    \    ...    Wait Until Element Is Visible    ${new_element}    timeout=${timeout}
+    \    Run Keyword If    ${element_check} != True    Log
+    \    ...    ${element_check}: page does not contain ${new_element}
+    \    ${new_element}=    Set Variable If    ${element_check} == True    ${new_element}
+    \    Exit For Loop If    ${element_check} == True
+    # ====================
+    Set fail message details
+    ${item_count}=    Evaluate    ${item_count}-1
+    Run Keyword If    ${element_check} == True     Log     ${element_check}: ${new_element} is visible on the page, out of the element list entered for review: ${element}
+    Run Keyword If    ${element_check} != True     Run Keyword And Continue On Failure
+    ...    Fail With Failure Details    ${element_click}: page did not contain any of the entered element(s): ${element}:eq(0 to ${item_count})
+# ====================
+# ====================
+
+Element should not be visible or not on page
+    [Arguments]    ${element}
+    ${element_not_on_page}=    Run Keyword And Return Status
+    ...    Page Should Not Contain Element    ${element}
+    Run Keyword If    ${element_not_on_page} == False
+    ...    Element Should Not Be Visible    ${element}
+
+Element gone or not visible
+    [Arguments]    ${element}    ${timeout}=${wait_time}
+    ${elementgone_firstcheck}=
+    ...    Run Keyword And Return Status
+    ...    Wait Until Element Is Not Visible    ${element}    ${timeout}
+    Run Keyword If    '''${elementgone_firstcheck}'''=='''False'''
+    ...    Wait Until Page Does Not Contain Element    ${element}    2
+    # =========================
+
+
+# This function was written because Chrome was having difficulties finding elements on the page,
+# where the element would be just out of the visible browser window.  This scrolls down a little on 
+# the page after inputting the base element that you want to scroll down from.
+Javascript Scroll Down On Page  [Arguments]  ${base element}
+    Wait Until Element Is Visible    ${base element}
+    ${base_element_location}        get vertical position using js    ${base element}
+    #${base_element_location}        Get Vertical Position    ${base element}
+    #Log    ${base_element_location}
+    ${converted number}    Convert To Integer    ${base_element_location} 
+    #Log    ${converted number}
+    ${add}    Evaluate    ${converted number} + 5 
+    #Log    ${add}
+    Execute Javascript    return window.scrollTo(0,${add})
+
+Javascript Scroll Up On Page
+    [Arguments]
+    ...    ${base element}
+    ...    ${timeout}=${wait_time}
+    ...    ${scrollUpNumber}=250
+    Wait Until Element Is Visible    ${base element}    ${timeout}
+    ${base_element_location}    get vertical position using js    ${base element}
+    #${base_element_location}    Get Vertical Position    ${base element}
+    Log    ${base_element_location}
+    ${converted number}    Convert To Integer  ${base_element_location}
+    Log    ${converted number}
+    ${sub}    Evaluate    ${converted number} - ${scrollUpNumber}
+    Log    ${sub} 
+    Execute Javascript    return window.scrollTo(0,${sub})
+    Sleep	0.1
+
+Javascript Scroll to item in nav
+    [Arguments]
+    ...    ${base element}
+    ...    ${nav_to_scroll}=${global_mNav}
+    ...    ${scrollUpNumber}=0
+    # =====================
+    ${nav_to_scroll_tagRemoved}
+    ...    Remove element variable tag    ${nav_to_scroll}
+    # =====================
+    Wait Until Page Contains Element    ${base element}
+    ${base_element_location}=
+    ...    get vertical position using js    ${base element}
+    #...    Get Vertical Position    ${base element}
+    ${base_element_check}    Evaluate    ${base_element_location} - ${scrollUpNumber}
+    # =====================
+    Log    ${scrollUpNumber}
+    Log    ${base_element_check}
+    # =====================
+    Run Keyword If    '''"''' in '''${base_element_check}'''
+    ...    Execute Javascript
+    ...    $('${nav_to_scroll_tagRemoved}').scrollTop(${base_element_check})
+    ...    ELSE    Execute Javascript
+    ...    $("${nav_to_scroll_tagRemoved}").scrollTop(${base_element_check})
+Nav - Scroll To and Click Element
+    [Arguments]
+    ...    ${base element}    ${nav_to_scroll}=${global_mNav}
+    ...    ${scrollUpNumber}=0
+    # =====================
+    Log    ${scrollUpNumber}
+    # =====================
+    #Javascript Scroll to item in nav
+    ##...    ${base element}    ${nav_to_scroll}    ${scrollUpNumber}
+    ##${get_scroll_num}=    Get Element Location    ${base element}
+    #Scroll Down    ${get_scroll_num}
+    Scroll Down    ${base_element}
+    Sleep    0.1
+    Find and Click Element    ${base element}
+ 
+Javascript Scroll to Element    [Arguments]    ${base element}
+     Wait Until Element Is Visible              ${base element}
+    ${base_element_location}    get vertical position using js    ${base element}
+    #${base_element_location}    Get Vertical Position    ${base element}
+    Log    ${base_element_location}
+    ${converted number}    Convert To Integer  ${base_element_location}
+    Log    ${converted number}
+    Execute Javascript    return window.scrollTo(0,${converted number})
+
+
+# *************************************************************
+
+Verify Element and set variable    [Arguments]    ${element}
+    #${new_element}=    Remove element variable tag    ${element}
+    ${checkfor_element}=    Run Keyword And Return Status
+    ...    Page Should Contain Element    jquery=${element}
+    
+    Run Keyword If    ${checkfor_element} == True
+    ...    Set Test Variable    ${js_element_to_check}    ${element}
+
+# *************************************************************
+
+

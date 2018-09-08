@@ -1,0 +1,272 @@
+*** Settings ***
+Documentation     This resource file contains objects to setup test
+
+#Library     AppiumLibrary
+Library     AppiumLibExtended.py
+Library     String
+Library     Screenshot
+Library     Collections
+Library     OperatingSystem
+Library     GlobalCustomRegex.py
+
+Resource    ../page_objects/global/shipping_fields.txt
+Resource    ../page_objects/registration/register_page.txt
+
+Resource    _global_element_functions.txt
+Resource    _global_copyreview.txt
+Resource    _global_helper_functions.txt
+Resource    appium_wrapper.txt
+
+*** Variables ***
+#####################
+# Selenium Settings # #
+#####################
+${browser}        gc
+${wait_time}      15
+${short_wait_time}    5
+
+${ff_profile}    None
+${jenkins_test}    True
+#############
+# Test Data #
+#############
+
+# =============================================================
+# BROWSER LISTS
+# =============================================================
+${browser_ff_name_list}    ['firefox','ff','Firefox']
+${browser_gc_name_list}    ['googlechrome','chrome','gc','Chrome']
+${browser_ie_name_list}    ['internetexplorer','ie','Ie']
+${browser_sf_name_list}    ['safari']
+${browser_js_name_list}    ['phantomjs']
+
+${browser_ff}       False
+${browser_gc}       False
+${browser_ie}       False
+${browser_sf}       False
+${browser_js}       False
+${browser_other}    False
+# =============================================================
+${browser_gc_headless}    False
+# =============================================================
+#
+#
+## ========================================================
+## THESE ARE FOR SETTING COUNTRY DOMAIN AND TELLING THE TESTS WHAT ADDRESS/INFORMATION TO USE.
+${country_us}    False
+${country_ca}    False
+${country_uk}    False
+${country_fr}    False
+${country_de}    False
+${country_es}    False
+${country_nl}    False
+${country_dk}    False
+${country_se}    False
+##
+${region_na}    False
+${region_eu}    False
+##
+
+## ========================================================
+${env_prod}     False
+${env_staging}  False
+${env_qa}       False
+## ========================================================
+${shoedazzle}   False
+
+${desktop}      False
+${mobile}       False
+
+${sd_mobile}    False
+
+${vco_testcase}		False
+${sd_singleItemScenario}	False
+## ========================================================
+${female_acct}    None
+${male_acct}    None
+## ========================================================
+## ========================================================
+*** Keywords ***
+
+Set fail message details
+    Log    This should be registering failure, but not yet programmed for Appium.
+    Register Keyword To Run On Failure    Failure Details
+Failure Details
+    #Log Title
+    #Log Location
+    Capture Page Screenshot
+
+
+Custom Open Browser and setup
+    Set Browser
+    Set test environment
+    Set wait time based on test environment
+    Set fail message details
+    
+    Create mobile emulation
+
+
+
+Set Chrome Options and open Chrome Browser
+    ${chrome options}=    Evaluate    sys.modules['selenium.webdriver'].ChromeOptions()    sys, selenium.webdriver
+    Call Method    ${chrome options}    add_argument    disable-notifications
+    Call Method    ${chrome options}    add_argument    disable-popup-blocking
+    Call Method    ${chrome options}    add_argument    start-maximized  #call for when headless is not enabled. Calling it during headless tests doesn't matter, since browser gets resized below and overwrites this.
+    Call Method    ${chrome options}    add_argument    enable-automation
+    Run Keyword If    ${browser_gc_headless} and ${country_us} == True
+    ...    Call Method    ${chrome options}    add_argument    headless
+    Call Method    ${chrome options}    add_argument    start-maximized
+
+    Create WebDriver    Chrome    chrome_options=${chrome options}
+    Run Keyword If    ${browser_gc_headless} and ${country_us} == True
+    ...    Set Window Size    1920  1080
+
+Create mobile emulation
+
+    #run on real device: Any available running version 6.0. To run on a specific device/emulator, replace deviceName value with name
+    # of actual device or emulator and add "platformVersion=<version of android>" after platformName parameter.
+    ###################################
+    Open Application  http://localhost:4723/wd/hub  platformName=Android    deviceName=Android    browserName=Chrome
+    ###################################
+    #run on emulator
+    #Open Application    http://localhost:4723/wd/hub    platformName=Android    platformVersion=8.1    deviceName=emulator-5554    browserName=Chrome
+    #run on iPhone Simulator
+    #Open Application    http://localhost:4755/wd/hub    platformName=iOS    platformVersion=7.0    deviceName='iPhone Simulator'    browserName=Safari
+
+    Adjust URL to control URL
+
+Set Browser
+    Run Keyword If    '${BROWSER}' in ${browser_ff_name_list}
+    ...    Set Global Variable    ${browser_ff}    True
+    ...    ELSE IF    '${BROWSER}' in ${browser_gc_name_list}
+    ...    Set Global Variable    ${browser_gc}    True
+    ...    ELSE IF    '${BROWSER}' in ${browser_ie_name_list}
+    ...    Set Global Variable    ${browser_ie}    True
+    ...    ELSE IF    '${BROWSER}' in ${browser_sf_name_list}
+    ...    Set Global Variable    ${browser_sf}    True
+    ...    ELSE IF    '${BROWSER}' in ${browser_js_name_list}
+    ...    Set Global Variable    ${browser_js}    True
+    ...    ELSE
+    ...    Set Global Variable    ${browser_other}    True
+
+Custom reload homepage
+    [Documentation]  This function is for reloading the homepage, usually at the start of a test.
+    Adjust URL to control URL
+    Log To Console    \n.
+
+
+Adjust URL to control URL
+    Go To    ${test_url}
+
+
+Custom reset browser
+    #Run Keyword And Ignore Error    Dismiss Alert  #In case there is a pop up alert that failed the test, this should close it so tests running after this test don't get affected.
+    Reset Application
+Close browser window
+    Close All Applications
+    #Close All Browsers
+## ==============================================
+## ==============================================
+shoedazzle test
+    Set Global Variable    ${shoedazzle}   True
+    Set country domain
+
+mobile test
+    Set Global Variable    ${mobile}     True
+    Set Global Variable    ${desktop}    False
+## ==================================
+
+shoedazzle mobile test
+    shoedazzle test
+    mobile test
+    Set Global Variable    ${sd_mobile}    True
+    Custom Open Browser and setup
+
+Country domain check    [Arguments]    ${country_url}=${us}
+    ${check_if_true_or_false}=
+    ...    Run Keyword And Return Status
+    ...    Should Contain    ${TEST_URL}    ${country_url}
+    [Return]    ${check_if_true_or_false}
+
+Set country domain
+    [Arguments]
+    ...    ${us}=.com      ${us_stage}=None    ${us_qa}=None    ${ca}=.ca
+    ...    ${uk}=.co.uk    ${fr}=.fr    ${de}=.de    ${es}=.es
+    ...    ${nl}=.nl       ${dk}=.dk    ${se}=.se
+    ${check_us}=
+    ...    Country domain check    ${us}
+    ${check_us_stage}=
+    ...    Run Keyword If    ${check_us} == False    Country domain check    ${us_stage}
+    ${check_us_qa}=
+    ...    Run Keyword If    ${check_us_stage} == False    Country domain check    ${us_qa}
+    Run Keyword If    ${check_us} or ${check_us_stage} or ${check_us_qa}
+    ...    Set Global variable    ${country_us}    True
+    ${check_ca}=
+    ...    Run Keyword If    ${check_us_qa} == False    Country domain check    ${ca}
+    Run Keyword If    ${check_ca} == True
+    ...    Set Global variable    ${country_ca}    ${check_ca}
+    ${check_uk}=
+    ...    Run Keyword If    ${check_ca} == False    Country domain check    ${uk}
+    Run Keyword If    ${check_uk} == True
+    ...    Set Global variable    ${country_uk}    ${check_uk}
+    ${check_fr}=
+    ...    Run Keyword If    ${check_uk} == False    Country domain check    ${fr}
+    Run Keyword If    ${check_fr} == True
+    ...    Set Global variable    ${country_fr}    ${check_fr}
+    ${check_de}=
+    ...    Run Keyword If    ${check_fr} == False    Country domain check    ${de}
+    Run Keyword If    ${check_de} == True
+    ...    Set Global variable    ${country_de}    ${check_de}
+    ${check_es}=
+    ...    Run Keyword If    ${check_de} == False    Country domain check    ${es}
+    Run Keyword If    ${check_es} == True
+    ...    Set Global variable    ${country_es}    ${check_es}
+    ${check_nl}=
+    ...    Run Keyword If    ${check_es} == False    Country domain check    ${nl}
+    Run Keyword If    ${check_nl} == True
+    ...    Set Global variable    ${country_nl}    ${check_nl}
+    ${check_dk}=
+    ...    Run Keyword If    ${check_nl} == False    Country domain check    ${dk}
+    Run Keyword If    ${check_dk} == True
+    ...    Set Global variable    ${country_dk}    ${check_dk}
+    ${check_se}=
+    ...    Run Keyword If    ${check_dk} == False    Country domain check    ${se}
+    Run Keyword If    ${check_se} == True
+    ...    Set Global variable    ${country_se}    ${check_se}
+    # ====================
+    # Set Region Boolean variables
+    Run Keyword If    ${country_us} or ${country_ca}
+    ...    Set Global variable    ${region_na}    True
+    ...    ELSE    Set Global variable    ${region_eu}    True
+
+Set test environment
+    Run Keyword If    'staging' in '${TEST_URL}'
+    ...    Set Global Variable    ${env_staging}    True
+    ...    ELSE IF    'qa' in '${TEST_URL}'
+    ...    Set Global Variable    ${env_qa}    True
+    ...    ELSE    Set Global Variable    ${env_prod}    True
+
+Set wait time based on test environment
+    Run Keyword If    ${env_prod} == False
+    ...    Set Global Variable    ${wait_time}    30
+    #Set Appium Timeout    ${wait_time}
+    #Set Selenium Timeout    ${wait_time}
+	Log To Console    Wait time for this session: ${wait_time} seconds
+## ============================================
+## ============================================
+# 10.5.2016 - SETS A COOKIE THAT THE TEST IS AN AUTOMATED TEST.
+Add cookies for automated test
+    Global - page has loaded
+
+    Run Keyword Unless    '${browser_js}' == 'True' or '${browser_ie}' == 'True'
+    ...    Run Keyword And Continue On Failure
+    ...    Wait Until Keyword Succeeds    2x    4s    Cookie adds
+    
+Cookie adds
+    Add Cookie    automated_test    true
+    Add Cookie    force_control    1
+    Add Cookie    tf_force_control    1
+    Add Cookie    test_framework_force_control    1
+
+# *************************************************************
+

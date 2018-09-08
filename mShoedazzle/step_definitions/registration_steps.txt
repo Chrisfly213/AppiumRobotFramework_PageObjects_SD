@@ -1,0 +1,20 @@
+*** Settings ***
+Documentation     this file contains step definitions for user registration
+Resource          ../page_objects/registration/quiz_steps_page.txt
+Resource          ../page_objects/registration/register_step_page.txt
+
+*** Keywords ***
+Completing Registration up to submit button
+    Quiz Step 1 - Select random answer
+    Quiz Step 2 - Select random answer
+    Quiz Step 3 - Select random answer
+    Quiz Step 4 - Select random answer
+    Quiz Step 5 - Select random answer
+
+    Quiz - complete size, dropdowns slide
+    
+    Input email in registration Email field
+    Input name in registration Name field
+    Confirm Registration Password field on page
+    Confirm Submit button on page
+    

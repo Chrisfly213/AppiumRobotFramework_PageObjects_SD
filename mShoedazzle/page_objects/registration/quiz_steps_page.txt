@@ -1,0 +1,126 @@
+*** Settings ***
+Documentation     this file contains objects on the quiz steps pages
+
+*** Variables ***
+${quiz_cont_btn}        jquery=.x_submit_btn
+
+${quiz_variant_encountered}    False
+
+${quiz_steps1_ans}   jquery=[onclick*='pane(2)'] ~ .image-shell .x_image_label
+${quiz_steps2_ans}   jquery=[onclick*='pane(3)'] ~ .image-shell .x_image_label
+${quiz_steps3_ans}   jquery=[onclick*='pane(4)'] ~ .image-shell .x_image_label
+${quiz_steps4_ans}   jquery=[onclick*='pane(5)'] ~ .image-shell .x_image_label
+${quiz_steps5_ans}   jquery=[onclick*='pane(6)'] ~ .image-shell .x_image_label
+
+${quiz_age_range_menu}    jquery=.quiz-user-details>select:eq(0)
+${quiz_shoe_size_menu}    jquery=.quiz-user-details>select:eq(1)
+${quiz_clothing_size_menu}    jquery=.quiz-user-details>select:eq(2)
+${quiz_heel_height_menu}    jquery=.quiz-user-details>select:eq(3)
+${quiz_heardaboutus_menu}    jquery=#survey_referral_source
+${quiz_reg_zip}          jquery=#shipping_zip
+${quiz_shoe_size_error_msg}    jquery=#quiz_error
+
+${quiz_skip_quiz_btn}    jquery=.skipQuiz
+${quiz_style_profile}    jquery=.quiz-user-details
+${quiz_sd_logo}    jquery=.header-logo
+
+*** Keywords ***
+Quiz Step 1 - Select random answer
+    Wait Until Element Is Visible     ${quiz_steps1_ans}
+    Select random clickable answer    ${quiz_steps1_ans}
+
+Quiz Step 2 - Select random answer
+    Select random clickable answer    ${quiz_steps2_ans}
+Quiz Step 3 - Select random answer
+    Select random clickable answer    ${quiz_steps3_ans}
+Quiz Step 4 - Select random answer
+    Select random clickable answer    ${quiz_steps4_ans}
+Quiz Step 5 - Select random answer
+    Select random clickable answer    ${quiz_steps5_ans}
+
+
+Quiz - complete size, dropdowns slide
+    Quiz Step 9 - Select random answer to age range
+    Quiz Step 9 - Select random answer to shoe size
+    Quiz Step 9 - Select random answer to clothing size
+    Quiz Step 9 - Select random answer to heel height
+    Quiz Step 9 - Select random answer to how did you hear about us
+    Quiz Step 9 - Input zip in Zip Code field
+    Select quiz Continue button
+
+Quiz: Skip Quiz Page 1
+    Wait Until Element Is Visible     ${quiz_steps1_ans}
+    Find and Click Element    ${quiz_skip_quiz_btn}
+
+Quiz: Skip Quiz Page 2
+    Quiz Step 1 - Select random answer
+    Wait Until Page Contains Element    ${quiz_steps2_ans}
+    Find and Click Element    ${quiz_skip_quiz_btn}
+
+Quiz: Skip Quiz Page 3
+    Quiz Step 1 - Select random answer
+    Quiz Step 2 - Select random answer
+    Wait Until Page Contains Element    ${quiz_steps3_ans}
+    Find and Click Element    ${quiz_skip_quiz_btn}
+
+Quiz: Skip Quiz Page 4
+    Quiz Step 1 - Select random answer
+    Quiz Step 2 - Select random answer
+    Quiz Step 3 - Select random answer
+    Wait Until Page Contains Element    ${quiz_steps4_ans}
+    Find and Click Element    ${quiz_skip_quiz_btn}
+
+Quiz: Skip Quiz Page 5
+    Quiz Step 1 - Select random answer
+    Quiz Step 2 - Select random answer
+    Quiz Step 3 - Select random answer
+    Quiz Step 4 - Select random answer
+    Wait Until Page Contains Element    ${quiz_steps5_ans}
+    Find and Click Element    ${quiz_skip_quiz_btn}
+
+Quiz: Verify user is on the style profile page
+    Wait Until Element Is Visible    ${quiz_style_profile}
+
+Quiz: Go back to home page
+    Go To    ${TEST_URL}
+    #Find and Click Element    ${quiz_sd_logo}
+
+#=================================================================
+#=================================================================
+
+######################
+### Local Functions ##
+######################
+Quiz Step 9 - Select random answer to age range
+    Select dropdown menu answer    ${quiz_age_range_menu}
+Quiz Step 9 - Select random answer to shoe size
+    Select dropdown menu answer    ${quiz_shoe_size_menu}
+Quiz Step 9 - Select random answer to clothing size
+    Select dropdown menu answer    ${quiz_clothing_size_menu}
+Quiz Step 9 - Select random answer to heel height
+    Select dropdown menu answer    ${quiz_heel_height_menu}
+Quiz Step 9 - Select random answer to how did you hear about us
+    Select dropdown menu answer    ${quiz_heardaboutus_menu}
+Quiz Step 9 - Input zip in Zip Code field
+    Global Shipping - Enter Postal Code      ${quiz_reg_zip}
+Select quiz Continue button    [Arguments]    ${count}=3
+    ${lower_count}=    Evaluate    ${count} - 1
+    Find and Click Element    ${quiz_cont_btn}
+    
+    ${element_gone}=
+    ...    Run Keyword And Return Status
+    ...    Wait Until Page Does Not Contain Element    ${quiz_cont_btn}    5
+    ${checkfor_error_msg}=
+    ...    Run Keyword If    '${element_gone}' == 'False'
+    ...    Run Keyword And Return Status
+    ...    Verify Element On Page    ${quiz_shoe_size_error_msg}    2
+
+    Run Keyword If    '${checkfor_error_msg}' == 'True'
+    ...    Quiz Step 9 - Select random answer to shoe size
+    Run Keyword If    '${checkfor_error_msg}' == 'True' and '${browser_ff}' == 'True'
+    ...    Quiz Step 9 - Select random answer to shoe size
+    
+    Run Keyword If    '${element_gone}' == 'False' and '${lower_count}' > '0'
+    ...    Select quiz Continue button    ${lower_count}
+    Run Keyword If    '${element_gone}' == 'False' and '${lower_count}' <= '0'
+    ...    Fail    Issue with clicking on the quiz continue button to proceed to registration page.

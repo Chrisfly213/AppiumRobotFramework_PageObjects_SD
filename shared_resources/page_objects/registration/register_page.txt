@@ -1,0 +1,33 @@
+*** Settings ***
+Documentation     this file contains objects for the registration page
+
+*** Variables ***
+${new_vip_acct}       False
+${new_nonvip_acct}    False
+
+${new_user_acct}      False
+
+${current_name_acct}    testf
+*** Keywords ***
+
+
+Generate new autotest email
+    ${time}=        Get Time    epoch
+    ${random_nums}=    Generate Random String    3    [NUMBERS]
+    Set Test Variable   ${current_email_acct}    autotest${time}${random_nums}@test.com
+    Set Test Variable   ${current_name_acct}     autotest${time}
+    Set Test Variable     ${new_user_acct}    True
+
+Global Reg - type new email into email field    [Arguments]    ${reg__email}=${reg_email}
+    Generate new autotest email
+    Wait Until Keyword Succeeds    2x    4s
+    ...    Clear and Type into element    ${reg__email}    ${current_email_acct}
+
+
+Set new vip account
+    Set test variable    ${new_vip_acct}    True
+
+
+Global Reg - type name in Name field
+    [Arguments]    ${reg__name}=${reg_name}    ${name}=${current_name_acct}
+    Clear and Type into element    ${reg__name}    ${name}

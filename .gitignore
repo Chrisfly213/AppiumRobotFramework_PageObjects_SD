@@ -1,0 +1,12 @@
+*.pyc
+.idea/
+log.html
+output.xml
+rerun.xml
+report.html
+*-screenshot*.png
+*-screenshot*.jpg
+debug.log
+geckodriver.log
+ghostdriver.log
+Sikuli_java_std*

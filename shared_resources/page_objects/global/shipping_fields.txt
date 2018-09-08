@@ -1,0 +1,113 @@
+﻿*** Settings ***
+Documentation    this file contains global objects for filling out shipping fields.
+
+*** Variables ***
+
+# =================
+# USER INFO
+# =================
+${global_fname}       shiptestfirst
+${global_lname}       shiptestlast
+
+
+${global_city_us}    El Segundo
+${global_city_ca}    Toronto
+${global_city_uk}    London
+${global_city_fr}    Paris
+${global_city_de}    Essen
+${global_city_es}    Barcelona
+${global_city_nl}    Rotterdam
+${global_city_dk}    København
+${global_city_se}    Stockholm
+
+${global_state_us_ca}    CA
+${global_state_us_ky}    KY
+${global_state_ca_on}    ON
+
+${global_zip_us}    90245
+${global_zip_ca}    M5B 2H1
+${global_zip_uk}    WC2E 9NA
+${global_zip_fr}    75116
+${global_zip_de}    45219
+${global_zip_es}    08028
+${global_zip_nl}    3025 GG
+${global_zip_dk}    1160
+${global_zip_se}    11157
+
+${global_country_us}    US
+
+
+# =============================
+# GLOBAL SHIPPING VARIABLES
+# =============================
+${global_ship_fname}              jquery=#form_input_shipping_firstname
+${global_ship_lname}              jquery=#form_input_shipping_lastname
+${global_ship_zip}                jquery=#form_input_shipping_zip
+
+
+${global_ship_billing_fname}              jquery=#form_input_billing_firstname
+${global_ship_billing_lname}              jquery=#form_input_billing_lastname
+${global_ship_billing_zip}                jquery=#form_input_billing_zip
+
+
+${global_ship_fname_other}              jquery=#form_input_firstname
+${global_ship_lname_other}              jquery=#form_input_lastname
+${global_ship_fname_other_fl}           jquery=#form_input_firstname[name='shipping_firstname']
+${global_ship_lname_other_fl}           jquery=#form_input_lastname[name='shipping_lastname']
+
+${global_ship_zip_other}                jquery=#form_input_zip
+
+
+*** Keywords ***
+
+
+
+Global Shipping - Enter First and Last Name
+    [Arguments]
+    ...    ${fname_field}=${global_ship_fname}
+    ...    ${lname_field}=${global_ship_lname}
+    ...    ${fname}=${global_fname}    ${lname}=${global_lname}
+    ...    ${use_current_name_acct}=True    ${fast_type_mode}=True
+    [Documentation]    use_current_name_acct will input the name assigned dynamically at the start of a new user signup. 
+    ...    This may include numbers in it, to match it to the email address created for the account. Some name fields 
+    ...    cannot accept numbers in the name. Setting this value to False will use the generic name without numbers.
+    
+    Global Shipping - Enter First Name    ${fname_field}    ${fname}    use_current_name_acct=${use_current_name_acct}    fast_type_mode=${fast_type_mode}
+    Global Shipping - Enter Last Name     ${lname_field}    ${lname}    fast_type_mode=${fast_type_mode}
+Global Shipping - Enter First Name
+    [Arguments]    ${fname_field}=${global_ship_fname}    ${fname}=${global_fname}    ${use_current_name_acct}=True    ${fast_type_mode}=True
+    Run Keyword If    "${current_name_acct}" == "${EMPTY}" or "${use_current_name_acct}" == "False"
+    ...    Clear and Type into element
+    ...    ${fname_field}    ${fname}    fast_type_mode=${fast_type_mode}
+    ...    ELSE    Clear and Type into element    ${fname_field}    ${current_name_acct}
+Global Shipping - Enter Last Name
+    [Arguments]    ${lname_field}=${global_ship_lname}    ${lname}=${global_lname}    ${fast_type_mode}=True
+    Clear and Type into element
+    ...    ${lname_field}    ${lname}    fast_type_mode=${fast_type_mode}
+
+Global Shipping - Enter Postal Code
+    [Arguments]    ${zip_field}=${global_ship_zip}    ${zip_us}=${global_zip_us}
+    Run Keyword If    ${country_us} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${zip_us}
+    Run Keyword If      ${country_ca} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_ca}
+    Run Keyword If      ${country_fr} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_fr}
+    Run Keyword If      ${country_de} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_de}
+    Run Keyword If      ${country_es} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_es}
+    Run Keyword If      ${country_nl} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_nl}
+    Run Keyword If      ${country_dk} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_dk}
+    Run Keyword If      ${country_se} == True
+    ...    Clear and Type into element
+    ...        ${zip_field}    ${global_zip_se}

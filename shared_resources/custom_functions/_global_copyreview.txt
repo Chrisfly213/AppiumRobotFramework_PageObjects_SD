@@ -1,0 +1,130 @@
+*** Settings ***
+Documentation    This resource file contains global keywords for checking copy across all scripts.
+
+Resource    _global_test_setup.txt
+
+
+
+*** Variables ***
+
+## ========================================================
+#
+${global_page_body}    jquery=body
+#
+${global_avoidusing_regex1}  (?msi)(100% SATISFACTION|(SATISFACTION|FIT) GUARANTEED?|FREE RETURNS)
+${global_avoidusing_text1}    100% SATISFACTION, SATISFACTION GUARANTEED, FIT GUARANTEE, FREE RETURNS
+
+${global_avoidusing_flonly_regex}    (?msi)(100% SATISFACTION|(SATISFACTION|FIT) GUARANTEED?)
+${global_avoidusing_flonly_text}    100% SATISFACTION, SATISFACTION GUARANTEED, FIT GUARANTEE, FREE RETURNS
+
+
+*** Keywords ***
+
+Global - various text not present
+    [Arguments]    ${content_to_check}=${global_page_body}
+    # ====================
+    ${current_url}=    Log Location
+    # ====================
+    ${fl_check}=
+    ...    Run Keyword If    ${fabletics} == True
+    ...    Run Keyword And Return Status
+    ...    Copy not present regex    ${content_to_check}    ${global_avoidusing_flonly_regex}
+    # ====================
+    ${global_check}=
+    ...    Run Keyword If    ${fabletics} == False
+    ...    Run Keyword And Return Status
+    ...    Copy not present regex    ${content_to_check}    ${global_avoidusing_regex1}
+    # ====================
+    Run Keyword If
+    ...    '''${fl_check}'''=='''False'''
+    ...    Fail    ${global_avoidusing_flonly_text} was not expected to be present in the page content on ${current_url}, but it was. Please check the failure details under the "fl_check" variable above in this keyword for more details.
+    # ====================
+    Run Keyword If
+    ...    '''${global_check}'''=='''False'''
+    ...    Fail    ${global_avoidusing_text1} was not expected to be present in the page content on ${current_url}, but it was. Please check the failure details under the "global_check" variable above in this keyword for more details.
+## *************************************************************
+## *************************************************************
+
+# Copy review
+Actual vs Expected Copy
+    [Arguments]
+    ...    ${ActualCopy_location}
+    ...    @{Expected_copy}
+    
+    Verify Element On Page        ${ActualCopy_location}
+    
+    # below converts locator to lowercase in case jquery tag is not lowercase.
+    ${copyloc_case_insensitive}=    Evaluate    "${Actual_copy_location}".lower()
+
+    ${ActualCopy}=
+    ...    Run Keyword If    '''jquery=''' in '''${copyloc_case_insensitive}'''
+    ...    Get Text    ${ActualCopy_location}
+    ...    ELSE    Set Variable    str(${ActualCopy_location})
+    Log    ${ActualCopy}
+    # ====================
+    :FOR    ${copy}    in    @{Expected_copy}
+    \       ${checked_copy}=    Run Keyword and Return Status
+    \       ...    Should Contain    ${ActualCopy}    ${copy}
+    \       Exit For Loop If    ${checked_copy} != True
+    Run Keyword If    ${checked_copy} == True
+    ...    Log     Pass: '${ActualCopy}' matches '@{Expected_copy}'
+    Run Keyword If    ${checked_copy} != True
+    ...    Run Keyword And Continue On Failure
+    ...    Fail with Failure Details    Fail: '${ActualCopy}' does not match '@{Expected_copy}'
+
+Actual vs Expected Copy regex
+    [Arguments]
+    ...    ${ActualCopy_location}
+    ...    @{Expected_copy_regex}
+
+    Verify Element On Page        ${ActualCopy_location}
+    
+    # below converts locator to lowercase in case jquery tag is not lowercase.
+    ${copyloc_case_insensitive}=    Evaluate    "${ActualCopy_location}".lower()
+    
+    ${ActualCopy}=
+    ...    Run Keyword If    '''jquery=''' in '''${copyloc_case_insensitive}'''
+    ...    Get Text    ${ActualCopy_location}
+    ...    ELSE    Set Variable    str(${ActualCopy_location})
+    Log    ${ActualCopy}
+    # ====================
+    :FOR    ${regex}    in    @{Expected_copy_regex}
+    \       ${checked_regex_copy}=    Run Keyword and Return Status
+    \       ...    Should Match Regexp    ${ActualCopy}    ${regex}
+    \       ${failed_regex}=    Set Variable If    ${checked_regex_copy} != True    ${regex}
+    \       Exit For Loop If    ${checked_regex_copy} != True
+    Run Keyword If    ${checked_regex_copy} == True
+    ...    Log     Pass: '${ActualCopy}' matches '@{Expected_copy_regex}'
+    Run Keyword If    ${checked_regex_copy} != True
+    ...    Run Keyword And Continue On Failure
+    ...    Fail with Failure Details    Fail: '${ActualCopy}' does not match '${failed_regex}'
+
+## ===================================================
+## ===================================================
+
+Copy not present regex
+    [Arguments]
+    ...    ${ActualCopy_location}
+    ...    @{Expected_copy_regex}
+    
+    Verify Element On Page        ${ActualCopy_location}
+
+    # below converts locator to lowercase in case jquery tag is not lowercase.
+    ${copyloc_case_insensitive}=    Evaluate    "${Actual_copy_location}".lower()
+    
+    ${ActualCopy}=
+    ...    Run Keyword If    '''jquery=''' in '''${copyloc_case_insensitive}'''
+    ...    Get Text    ${ActualCopy_location}
+    ...    ELSE    Set Variable    str(${ActualCopy_location})
+    Log    ${ActualCopy}
+    # ====================
+    :FOR    ${regex}    in    @{Expected_copy_regex}
+    \       ${checked_regex_copy}=    Run Keyword and Return Status
+    \       ...    Should Not Match Regexp    ${ActualCopy}    ${regex}
+    \       Exit For Loop If    ${checked_regex_copy} != True
+    Run Keyword If    ${checked_regex_copy} == True
+    ...    Log     Pass: '${ActualCopy}' does not match '@{Expected_copy_regex}'
+    Run Keyword If    ${checked_regex_copy} != True
+    ...    Run Keyword And Continue On Failure
+    ...    Fail with Failure Details
+    ...    Fail: '${ActualCopy}' is not supposed to match '@{Expected_copy_regex}'

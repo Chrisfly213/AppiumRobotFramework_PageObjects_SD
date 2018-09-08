@@ -1,0 +1,15 @@
+*** Settings ***
+Documentation     this file contains step definitions for the home page
+Resource          ../page_objects/home/homepage_public.txt
+
+*** Keywords ***
+
+## Public ##
+User goes to the public home page
+    Go to public home page
+
+User is on the public home page
+    Verify public home page appears
+
+Navigates to Get Started
+    Click Get Started top image on page
